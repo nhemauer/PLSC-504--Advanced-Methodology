@@ -1,0 +1,139 @@
+---
+title: "PLSC 540 Hemauer Assignment 8"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(igraph)
+library(ggplot2)
+library(ergm)
+library(statnet)
+
+#Code from ChatGPT
+
+# Assuming you've read the data into a DataFrame named 'senate_data'
+senate_data <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseEight.csv")
+
+# Filtering only cosponsorship instances
+cosponsorships = senate_data %>% filter(sponsor == 1)
+
+# Create a list of unique senator ids
+unique_ids = unique(cosponsorships$people_id)
+id_to_index = setNames(seq_along(unique_ids), unique_ids)
+
+# Create binary and weighted adjacency matrices
+n = length(unique_ids)
+adjacency_matrix_A = matrix(0, nrow = n, ncol = n)
+adjacency_matrix_B = matrix(0, nrow = n, ncol = n)
+
+# Populate the matrices
+for (bill in unique(cosponsorships$bill_id)) {
+  sponsors = cosponsorships %>% filter(bill_id == bill) %>% select(people_id)
+  sponsors_indices = id_to_index[as.character(sponsors$people_id)]
+ 
+  if (length(sponsors_indices) > 1) {
+    combinations = expand.grid(sponsors_indices, sponsors_indices)
+    combinations = combinations[combinations$Var1 != combinations$Var2, ]
+   
+    for (row in 1:nrow(combinations)) {
+      i = combinations$Var1[row]
+      j = combinations$Var2[row]
+     
+      # Update binary matrix
+      adjacency_matrix_A[i, j] = 1
+      adjacency_matrix_A[j, i] = 1
+
+      # Update weighted matrix
+      adjacency_matrix_B[i, j] = adjacency_matrix_B[i, j] + 1
+      adjacency_matrix_B[j, i] = adjacency_matrix_B[j, i] + 1
+    }
+  }
+}
+
+```
+
+2.
+
+```{r}
+
+graph <- graph_from_adjacency_matrix(adjacency_matrix_A, mode = "undirected")
+
+plot(graph, 
+     layout = layout_with_fr(graph),  
+     vertex.size = 10,                 
+     edge.color = "black", 
+     vertex.color = "white",
+     edge.width = .5,                
+     main = "Large Network Plot")    
+
+######### By Party
+
+senate_data2 <- senate_data
+
+senate_data2$party <- ifelse(senate_data$party == "R", 1, 0)
+
+senate_data2 <- senate_data2 %>% group_by(people_id, party) %>% summarise(n())
+
+graph <- graph_from_adjacency_matrix(adjacency_matrix_A, mode = "undirected")
+
+plot(graph, 
+     layout = layout_with_fr(graph),  
+     edge.color = "black",
+     vertex.color = senate_data2$party,
+     vertex.size = 10,
+     edge.width = .5,                
+     main = "Large Network Plot") 
+
+degree(adjacency_matrix_A)
+closeness(adjacency_matrix_A)
+betweenness(adjacency_matrix_A)
+eigen_centrality(graph)$vector
+
+```
+
+3.
+
+```{r}
+
+graph <- graph_from_adjacency_matrix(adjacency_matrix_B, mode = "undirected")
+
+plot(graph, 
+     layout = layout_with_fr(graph),  
+     vertex.size = 10,                 
+     edge.color = "black", 
+     vertex.color = "white",
+     edge.width = .5,                
+     main = "Large Network Plot")    
+
+######### By Party
+
+graph <- graph_from_adjacency_matrix(adjacency_matrix_B, mode = "undirected")
+
+plot(graph, 
+     layout = layout_with_fr(graph),  
+     edge.color = "black",
+     vertex.color = senate_data2$party,
+     vertex.size = 10,
+     edge.width = .5,                
+     main = "Large Network Plot") 
+
+degree(adjacency_matrix_B)
+closeness(adjacency_matrix_B)
+betweenness(adjacency_matrix_B)
+eigen_centrality(graph)$vector
+
+```
+
+4.
+
+```{r}
+
+network <- network(adjacency_matrix_A, directed = FALSE)
+network %v% "Party" <- unique(senate_data$party)
+
+ergm(network ~ nodematch("Party", diff = F) + edgecov(as.matrix(adjacency_matrix_A)), control = control.ergm(seed = 1337))
+
+```
+

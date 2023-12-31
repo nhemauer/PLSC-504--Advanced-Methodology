@@ -1,0 +1,118 @@
+---
+title: "PLSC 504 Hemauer Assignment #3"
+output: html_notebook
+---
+
+Part 1
+
+1.
+
+```{r}
+
+library(dplyr)
+library(MatchIt)
+library(marginaleffects)
+library(car)
+
+set.seed(1337)
+
+repData <- 1
+repData[1:10000] <- sample(0:1, 10000, replace = TRUE, prob = c(.95, .05)) #Treatment-- Phone Call (1 or 2) and control
+
+repData2 <- repData
+numChange <- round(.35 * length(repData))    #These lines correlate the treatment with the voting column
+indicesChange <- sample(1:length(repData), numChange)
+repData2 <- ifelse(seq_len(length(repData2)) %in% indicesChange, 0, repData2) #Vote
+
+repData3 <- 0
+repData3[1:10000] <- sample(0:1, 10000, replace = TRUE, prob = c(.98, .02)) #Newly registered voter
+
+repData4 <- 0
+repData4[1:10000] <- sample(18:90, 10000, replace = TRUE) #Age
+
+repData5 <- 0
+repData5[1:10000] <- sample(0:1, 10000, replace = TRUE, prob = c(.45, .55)) #Female
+
+fullData <- as.data.frame(cbind(repData, repData2, repData3, repData4, repData5))
+cor(fullData$repData, fullData$repData2)
+
+model <- matchit(data = fullData, repData ~ repData3 + repData4 + repData5, method = "exact", distance = "glm")
+
+sumModel <- match.data(model)
+
+model3 <- lm(repData2 ~ repData * (repData3 + repData4 + repData5), data = sumModel, weights = weights)
+avg_comparisons(model3, variables = "repData", vcov = ~subclass, newdata = subset(sumModel, repData == 1), wts = "weights")
+
+```
+
+
+Part 2
+
+1.
+
+```{r}
+
+data <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseThree.csv")
+
+#murder ~ deathpen + urban + estbkpct + pop + aveeduc + aveideol
+
+model1 <- lm(data = data, murder ~ deathpen + urban + estbkpct + pop + aveeduc + aveideol)
+summary(model1)
+
+```
+
+This linear regression model finds that the death penalty is not predictive of murder rate. How urban a state is, the state's black population, and total population are the most predictive of murder rate... with each being a positive coefficient suggesting that when each is increased, murder increases. Average education and average ideology are less significant but still significant nonetheless. 
+
+2.
+
+```{r}
+
+model2 <- matchit(data = data, deathpen ~ urban + estbkpct + pop + aveeduc + aveideol, method = "full", distance = "glm")
+
+sumModel <- match.data(model2)
+
+model3 <- lm(murder ~ deathpen * (urban + estbkpct + pop + aveeduc + aveideol), data = sumModel, weights = weights)
+avg_comparisons(model3, variables = "deathpen", vcov = ~subclass, newdata = subset(sumModel, deathpen == 1), wts = "weights")
+
+```
+
+My results suggest that the deathpenalty has a -3.29 effect on the murder rate.
+
+3.
+
+Unsure how to test the model other than by checking the balance. It could also be tested by varying the method of matching used (as a sensitivity analysis).
+
+4.
+
+```{r}
+
+data$lowcont[which(data$lowcont < 1)] <- 0
+
+model2 <- matchit(data = data, lowcont ~ pop + aveeduc + urban, method = "full", distance = "glm")
+
+sumModel <- match.data(model2)
+
+model3 <- lm(murder ~ lowcont * (urban + pop + aveeduc), data = sumModel, weights = weights)
+avg_comparisons(model3, variables = "lowcont", vcov = ~subclass, newdata = subset(sumModel, lowcont == 1), wts = "weights")
+
+```
+
+The first result shows that murder rate increases if the House is Democratic.
+
+```{r}
+
+data$upcont[which(data$upcont < 1)] <- 0
+
+model2 <- matchit(data = data, upcont ~ pop + aveeduc + urban, method = "full", distance = "glm")
+summary(model2)
+
+sumModel <- match.data(model2)
+head(sumModel)
+
+model3 <- lm(murder ~ upcont * (urban + pop + aveeduc), data = sumModel, weights = weights)
+summary(model3)
+avg_comparisons(model3, variables = "upcont", vcov = ~subclass, newdata = subset(sumModel, upcont == 1), wts = "weights")
+
+```
+
+The second result shows that murder rate increases if the Senate is Democratic.

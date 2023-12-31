@@ -1,0 +1,249 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+library(plm)
+#install.packages("plm")
+install.packages("stargazer")
+library(stargazer)
+library(dplyr)
+library(ggplot2)
+
+compiledData <- read.csv("C:/Users/ndhem/Dropbox/compiledData.csv")
+
+compiledData2 <- compiledData
+
+compiledData2 <- subset(compiledData2, select = -c(FINALWT, GENHLTH, PHYSHLTH, EMPLOY))
+
+###Make Column Names Cleaner
+
+compiledData2 <- rename(compiledData2, Race = "RACE")
+compiledData2 <- rename(compiledData2, Age = "AGE5YR")
+compiledData2 <- rename(compiledData2, Sex = "SEX")
+compiledData2 <- rename(compiledData2, Depression = "MENTHLTH")
+compiledData2 <- rename(compiledData2, Marital = "MARITAL")
+compiledData2 <- rename(compiledData2, Education = "EDUCA")
+#compiledData2 <- rename(compiledData2, Employment = "EMPLOY")
+compiledData2 <- rename(compiledData2, Income = "INCOME2")
+
+###Subset Presidential Years
+
+compiledData2 <- subset(compiledData2, YEAR %in% c(1994, 1998, 2002, 2006, 2010, 2014, 2018))    #Subset for Midterms
+#compiledData2 <- subset(compiledData2, YEAR %in% c(1996, 2000, 2004, 2008, 2012, 2016, 2020))
+compiledData2 <- subset(compiledData2, select = -c(X))
+
+compiledData2$Depression[which(compiledData2$Depression == 88)] <- 0
+
+###Make Race Binary
+
+compiledData2$Race[which(compiledData2$Race == 3)] <- 2
+compiledData2$Race[which(compiledData2$Race == 4)] <- 2
+
+###Make Marital Status Binary
+
+compiledData2$Marital[which(compiledData2$Marital == 3)] <- 2
+compiledData2$Marital[which(compiledData2$Marital == 4)] <- 2
+compiledData2$Marital[which(compiledData2$Marital == 5)] <- 2
+compiledData2$Marital[which(compiledData2$Marital == 6)] <- 2
+
+
+```
+
+```{r}
+
+###Make Percentage into Proportion
+
+compiledData2$VEP2 <- as.numeric(gsub("%", "", compiledData2$VEP)) / 100
+
+###Group and Create Panel Data from Aggregate Cross-Sectional
+
+pData <- compiledData2 %>% group_by(STATE, YEAR) %>% summarise(Race = mean(Race), Age = mean(Age), Sex = mean(Sex), Depression = mean(Depression), Marital = mean(Marital), Education = mean(Education), Income = mean(Income), VEP = mean(VEP2))
+
+pData <- pdata.frame(pData, index = c("STATE", "YEAR"))
+pData <- rename(pData, FIPS = "STATE")
+
+fips <- read.csv("C:/Users/ndhem/OneDrive - The Pennsylvania State University/Documents/Hemauer MA/BRFSSData/state_fips_to_postal.csv") #FIPS Codes
+
+###Merging State Names to FIPS Codes
+
+pData <- merge(pData, fips, by = 'FIPS')
+pData <- subset(pData, select = -c(X))
+
+###Check Whether to use Random or Fixed Effects
+
+#within <- plm(VEP ~ Race + Age + Sex + Depression + Marital + Education + Employment + Income, data = pData, model = "within")
+random <- plm(VEP ~ Race + Age + Sex + Depression + Marital + Education + Income, data = pData, model = "random")
+#phtest(within, random)
+
+summary(random)
+
+stargazer(random, type = "html", title = "Random Effects Model", out = "RandomEffects.html")
+
+###Summary Statistics
+
+#compiledData2 <- subset(compiledData2, select = -c(STATE, YEAR))
+#compiledData2 <- rename(compiledData2, Turnout = "VEP2")
+#stargazer(compiledData2, type = "html", title = "Summary Statistics", out = "SummaryStatistics.html")
+
+```
+
+
+```{r}
+
+###For presidential only, plot mean days (X) and VEP (Y)
+
+###First 10 States
+
+pDataSub <- subset(pData, FIPS %in% c(1, 2, 4, 5, 6, 8, 9, 10, 11, 12))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Presidential Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###10-20 States
+
+pDataSub <- subset(pData, FIPS %in% c(13, 15, 16, 17, 18, 19, 20, 21, 22, 23))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Presidential Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###20-30 States
+
+pDataSub <- subset(pData, FIPS %in% c(24, 25, 26, 27, 28, 29, 30, 31, 32, 33))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Presidential Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###30-40 States
+
+pDataSub <- subset(pData, FIPS %in% c(34, 35, 36, 37, 38, 39, 40, 41, 42, 44))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Presidential Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###40-50 States
+
+pDataSub <- subset(pData, FIPS %in% c(45, 46, 47, 48, 49, 50, 51, 53, 54, 55))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Presidential Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###Wyoming
+
+pDataSub <- subset(pData, FIPS %in% c(56))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Presidential Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+```
+
+```{r}
+
+###For midterm only, plot mean days (X) and VEP (Y)
+
+###First 10 States
+
+pDataSub <- subset(pData, FIPS %in% c(1, 2, 4, 5, 6, 8, 9, 10, 11, 12))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Midterm Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###10-20 States
+
+pDataSub <- subset(pData, FIPS %in% c(13, 15, 16, 17, 18, 19, 20, 21, 22, 23))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Midterm Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###20-30 States
+
+pDataSub <- subset(pData, FIPS %in% c(24, 25, 26, 27, 28, 29, 30, 31, 32, 33))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Midterm Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###30-40 States
+
+pDataSub <- subset(pData, FIPS %in% c(34, 35, 36, 37, 38, 39, 40, 41, 42, 44))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Midterm Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###40-50 States
+
+pDataSub <- subset(pData, FIPS %in% c(45, 46, 47, 48, 49, 50, 51, 53, 54, 55))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Midterm Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+###Wyoming
+
+pDataSub <- subset(pData, FIPS %in% c(56))
+
+ggplot(pDataSub, aes(x = Depression, y = VEP, group = 1)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~NAME, ncol = 5) +
+  ggtitle("State Voter Turnout vs. Depression Rate (Midterm Election Years)") +
+  xlab("Average Depression Rate") +
+  ylab("Voter Turnout (Ratio)")
+
+```
+

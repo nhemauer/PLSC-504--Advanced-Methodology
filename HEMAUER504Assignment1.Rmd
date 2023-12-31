@@ -1,0 +1,205 @@
+---
+title: "PLSC 504 Hemauer Assignment 1"
+output: html_notebook
+---
+
+```{r}
+
+library(stargazer)
+library(plyr)
+library(VGAM)
+library(mlogit)
+library(plm)
+library(tidyr)
+library(nnet)
+library(MASS)
+library(lmtest)
+
+set.seed(1337)
+
+```
+
+Part 1
+
+1.
+
+```{r}
+
+N = 500
+D = sample(x = c(0, 1), N, replace = TRUE)
+Y = sample(x = c(0, 1), N, replace = TRUE)
+
+B0 <- 23
+B1 <- 46
+logiPred <- exp(B0 + (B1 * D)) / 1 + exp(B0 + (B1 * D))
+logiPred <- as.data.frame(logiPred)
+
+```
+
+2.
+
+```{r}
+
+myLogit <- glm(Y ~ D, data = logiPred, family = "binomial")
+summary(myLogit)
+#stargazer(myLogit, type = "html", title = "Logistic Regression", out = "assign1Logi.htm")
+
+```
+
+3.
+
+```{r}
+
+myProbit <- glm(Y ~ D, data = logiPred, family = binomial(link = "probit"))
+summary(myProbit)
+#stargazer(myProbit, type = "html", title = "Probit Regression", out = "assign1Probit.htm")
+
+```
+
+4. 
+
+```{r}
+
+anova <- anova(myLogit, myProbit)
+print(anova)
+
+```
+
+5. 
+
+```{r}
+
+estimateDiffs <- function(){
+
+  myLogit <- glm(Y ~ D, data = logiPred, family = "binomial")
+  myProbit <- glm(Y ~ D, data = logiPred, family = binomial(link = "probit"))
+  anova <- anova(myLogit, myProbit)
+
+  return(anova)
+}
+
+finalEst <- rdply(100, estimateDiffs)
+print(finalEst)
+
+```
+
+6.
+
+```{r}
+
+estimateDiffs2 <- function(){
+
+  N = sample(x = c(50:500), 1, replace = TRUE)
+  B0 = sample(x = c(1:75), 1, replace = TRUE)
+  B1 = sample(x = c(1:75), 1, replace = TRUE)
+  D = sample(x = c(0, 1), N, replace = TRUE)
+  Y = sample(x = c(0, 1), N, replace = TRUE)
+  
+  logiPred <- exp(B0 + (B1 * D)) / 1 + exp(B0 + (B1 * D))
+  logiPred <- as.data.frame(logiPred)
+  
+  myLogit <- glm(Y ~ D, data = logiPred, family = "binomial")
+  myProbit <- glm(Y ~ D, data = logiPred, family = binomial(link = "probit"))
+  
+  anova <- anova(myLogit, myProbit)
+
+  return(anova)
+}
+
+finalEst <- rdply(1000, estimateDiffs2)
+print(finalEst)
+
+```
+
+Part 2
+
+1.
+
+```{r}
+
+data <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseOne.csv")
+
+mLogit <- vglm(data = data, cartype ~ female + kids + age, family = multinomial)
+summary(mLogit)
+
+```
+
+Interpreting this model: 
+
+Being a female as opposed to a male, changes the log odds of driving a truck by -1.542.
+
+Having children as opposed to not having children, changes the log odds of driving a SUV by -0.655
+Having children as opposed to not having children, changes the log odds of driving a truck by -0.0764
+
+For every unit increase in age, the log odds of driving a car increase by .029
+For every unit increase in age, the log odds of driving a SUV increase by .011
+For every unit increase in age, the log odds of driving a truck increase by .019
+
+2.
+
+```{r}
+
+
+mLogit2 <- vglm(data = data, cartype ~ female, family = multinomial)
+
+newData <- data.frame(c(data$cartype))
+newData2 <- data.frame(data$female)
+colnames(newData) <- "cartype"
+colnames(newData2) <- "female"
+fullData <- cbind(newData, newData2)
+
+predictedProbs <- predict(mLogit2, fullData)
+
+plot(x = fullData$female , y = predictedProbs[,1],pch=19,
+     col=rgb(100,0,0,100,maxColorValue=255),
+     xlab="Sex",
+     ylab="Predicted Probability")
+
+
+```
+
+If you are a male, you are more likely to have a Truck or SUV than a female, as the predicted probability for men is -0.518 and for women it is -0.539
+
+3.
+
+```{r}
+
+fullData <- data
+fullData <- subset(fullData, cartype != "")
+choice <- as.factor(fullData$cartype)
+predictor <- as.data.frame(fullData[ , "age"])
+fullData <- drop_na(fullData)
+
+data2 <- mlogit.data(data = fullData, choice = 'cartype', shape = "wide")
+
+mLogit <- mlogit(cartype~1 | age, data = data2)
+summary(mLogit)
+
+mLogit2 <- mlogit(cartype~1, data = data2)
+
+hmftest(mLogit, mLogit2)
+
+#Not sure how to setup the second model with alt.subset
+
+```
+
+4.
+
+```{r}
+
+model <- multinom(choice ~ ., data = predictor, method = "probit")
+summary(model)
+
+model <- multinom(choice ~ ., data = predictor, method = "logit")
+summary(model)
+
+mLogit3 <- mlogit(cartype~1 | age, data = data2, heterosc = TRUE)
+summary(mLogit3)
+
+```
+
+The logit and probit models are identical. The HEV model has standard errors that are very extreme and estimates that are not accurate to those of the other two models.
+
+
+
+5. My statistical conclusions (i.e. having no children and being a male == drive a truck) suggest that the more conservative (as single males are significantly likely to be conservative), the more likely you will drive a truck. This lives up to theoretical expectations.

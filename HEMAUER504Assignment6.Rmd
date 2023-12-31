@@ -1,0 +1,35 @@
+---
+title: "PLSC 504 Hemauer Assignment 6"
+output: html_notebook
+---
+
+1.
+
+```{r}
+
+data <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseSix.csv")
+
+survModel <- survival::survfit(data = data, survival::Surv(time = data$TenureStart, time2 = data$TenureEnd, event = data$LeftOffice) ~ Female + LatinAm)
+
+plot(survModel,xlab="Time (in months)",
+     ylab="Survival Estimate",
+     lwd=c(3,1,1))
+
+summary(survModel)
+
+```
+
+For men not in Latin America, the chance a leader stays in office for a month is 69%. At 5 months this decreases to 27%, and at 10 months it decreases to 15%. For women outside Latin America, the chance a leader stays in office for a month is 80%; 48% for 4 months, and 12% for a year. For men in Latin America, the chance a leader stays in office for a month is 67%; 27% for 5 months; and 8% for 10 months. For women in Latin America, there is not enough data.
+
+
+2.
+
+```{r}
+
+coxModel <- survival::coxph(data = data, survival::Surv(time = data$TenureStart, time2 = data$TenureEnd, event = data$LeftOffice) ~ Female + LatinAm)
+
+summary(coxModel)
+
+```
+
+The hazard model displays the risk of leaving office. In this case, the model shows that women are less likely to be removed from office, and Latin American leaders are more likely to be removed. Being female reduces the hazard by a factor of .78, or 22%. Likewise, Latin America increases the hazard by a factor of 1.05, or 5% (?).

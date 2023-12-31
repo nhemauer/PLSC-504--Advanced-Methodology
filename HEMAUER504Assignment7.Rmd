@@ -1,0 +1,62 @@
+---
+title: "504 Hemauer Assignment 7"
+output: html_notebook
+---
+
+1.
+
+```{r}
+
+library(tidyr)
+library(corrplot)
+library(psych)
+library(ggplot2)
+
+#https://stats.oarc.ucla.edu/spss/seminars/efa-spss/
+#https://www.karlin.mff.cuni.cz/~maciak/NMST539/cvicenie8.html
+
+fullData <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseSeven.csv")
+fullData <- drop_na(fullData)
+
+data <- fullData[, 5:13]
+
+corrplot(cor(data), method = "ellipse")
+fa.parallel(data)
+
+```
+
+The variables are highly related as shown by the uniqueness and the correlation plot.
+
+2.
+
+```{r}
+
+fa1 <- factanal(data, factors = 1, scores = "regression", rotation = "none")
+print(fa1)
+
+loadings <- fa1$loadings
+corr <- cor(data)[ , 1]
+
+plot(loadings, corr)
+abline(a = 0, b = 1, lwd = 2)
+
+```
+
+The loadings are highly correlated and the uniqueness of the variables is very low, suggesting that each variable measures a similar construct. 
+
+
+
+3.
+
+```{r}
+
+scores <- fa1$scores[1:196, ]
+subsetted <- subset(fullData, country == "Afghanistan")
+
+ggplot(data = subsetted, mapping = (aes(x = year, y = polity2))) +
+    geom_line() + 
+    geom_line(aes(y = scores, color = "Red"))
+
+```
+
+This plot specifically looks at the first country in the dataset– Afghanistan. This plot shows that there is heavy correlation between the factor scores and the polity2 variable. Specifically, in 1970 the polity score increases drastically as the factor scores decrease drastically. This again happens in 1990. This suggests the new measure works as a good alternative.

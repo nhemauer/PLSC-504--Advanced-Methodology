@@ -1,0 +1,167 @@
+---
+title: "PLSC 504 Hemauer Assignment 4"
+output: html_notebook
+---
+
+Part 1
+
+```{r}
+
+library(car)
+library(plyr)
+library(ggplot2)
+library(forecast)
+library(tidyr)
+library(dplyr)
+library(dyn)
+
+set.seed(1337)
+
+statCall <-  function(){
+
+  Y <- rnorm(1000, mean = 20, sd = 20)
+  X <- abs(rnorm(1000, mean = 100, sd = 30))
+
+  model <- lm(Y ~ X)
+  
+  tstat <- summary(model)$coefficients[, 3]
+  tstat <- tstat[2]
+  
+  pstat <- coef(summary(model))[, 4]
+  pstat <- pstat[2]
+  
+  r2 <- summary(model)$adj.r.squared
+  
+  durbin <- durbinWatsonTest(model)
+  
+  dhat <- durbin[['dw']]
+
+  df <- cbind(tstat, pstat, r2, dhat)
+
+  return(df)
+}
+
+data <- rdply(100, statCall())
+
+ggplot(data = data, aes(x = .n, y = tstat, group = 1)) +
+  geom_point() +
+  ylim(-1, 1)
+
+ggplot(data = data, aes(x = .n, y = pstat, group = 1)) +
+  geom_point() +
+  ylim(-1, 1)
+
+ggplot(data = data, aes(x = .n, y = r2, group = 1)) +
+  geom_point() +
+  ylim(-1, 1)
+
+ggplot(data = data, aes(x = .n, y = dhat, group = 1)) +
+  geom_point() +
+  ylim(0, 10)
+
+```
+My results show that there is limited autocorrelation, the model specification is horrible (r2), no significance (pstat), and the t-stat shows that the results are not much different than the average.
+
+5.
+
+```{r}
+
+statCall <-  function(n){
+
+  Y <- rnorm(n, mean = 20, sd = 20)
+  X <- abs(rnorm(n, mean = 100, sd = 30))
+
+  model <- lm(Y ~ X)
+  
+  tstat <- summary(model)$coefficients[, 3]
+  tstat <- tstat[2]
+  
+  pstat <- coef(summary(model))[, 4]
+  pstat <- pstat[2]
+  
+  r2 <- summary(model)$adj.r.squared
+  
+  durbin <- durbinWatsonTest(model)
+  
+  dhat <- durbin[['dw']]
+
+  df <- cbind(tstat, pstat, r2, dhat)
+
+  return(df)
+}
+
+#newData <- data.frame(matrix(, nrow=1, ncol=1))
+
+#for (i in 1:length(n)) {
+#  newData[i] <- statCall(n[i])
+#}
+
+#newData <- as.data.frame(newData)
+
+data100 <- rdply(100, statCall(100))
+data450 <- rdply(100, statCall(450))
+data1000 <- rdply(100, statCall(1000))
+data2000 <- rdply(100, statCall(2000))
+
+par(mfrow = c(2, 2))
+plot(data100$pstat, xlab = "n", ylab = "P-Value", lwd = 2, col = "red", ylim = c(0, 0.2))
+plot(data450$pstat, xlab = "n", ylab = "P-Value", lwd = 2, col = "blue", ylim = c(0, 0.2))
+plot(data1000$pstat, xlab = "n", ylab = "P-Value", lwd = 2, col = "black", ylim = c(0, 0.2))
+plot(data2000$pstat, xlab = "n", ylab = "P-Value", lwd = 2, col = "green", ylim = c(0, 0.2))
+
+par(mfrow = c(2, 2))
+plot(data100$tstat, xlab = "n", ylab = "T-Value", lwd = 2, col = "red", ylim = c(0, 4))
+plot(data450$tstat, xlab = "n", ylab = "T-Value", lwd = 2, col = "blue", ylim = c(0, 4))
+plot(data1000$tstat, xlab = "n", ylab = "T-Value", lwd = 2, col = "black", ylim = c(0, 4))
+plot(data2000$tstat, xlab = "n", ylab = "T-Value", lwd = 2, col = "green", ylim = c(0, 4))
+
+par(mfrow = c(2, 2))
+plot(data100$r2, xlab = "n", ylab = "r2", lwd = 2, col = "red", ylim = c(0, 0.2))
+plot(data450$r2, xlab = "n", ylab = "r2", lwd = 2, col = "blue", ylim = c(0, 0.2))
+plot(data1000$r2, xlab = "n", ylab = "r2", lwd = 2, col = "black", ylim = c(0, 0.2))
+plot(data2000$r2, xlab = "n", ylab = "r2", lwd = 2, col = "green", ylim = c(0, 0.2))
+
+par(mfrow = c(2, 2))
+plot(data100$dhat, xlab = "n", ylab = "dhat", lwd = 2, col = "red", ylim = c(0, 3))
+plot(data450$dhat, xlab = "n", ylab = "dhat", lwd = 2, col = "blue", ylim = c(0, 3))
+plot(data1000$dhat, xlab = "n", ylab = "dhat", lwd = 2, col = "black", ylim = c(0, 3))
+plot(data2000$dhat, xlab = "n", ylab = "dhat", lwd = 2, col = "green", ylim = c(0, 3))
+
+
+```
+
+In my plots, the p-value doesn't show much. However, it appears that as the n in the series increases, the t-value moves, on average, closer to zero which indicates that the two series are similar. The R2 shows a similar trend. As the n in the series increases, the r2 moves closer to zero on average. This suggests the model predicts close to nothing. Finally, the dhat gets closer and closer to 2 as the series increases. This suggests that as the n increases, the model has less autocorrelation.
+
+
+Part 2
+
+1. Long Term
+
+```{r}
+
+data <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseFour.csv")
+data <- na.omit(data)
+
+scotusTs <- ts(data$SCLib.TS, frequency = 12, start = c(1952, 10), end = c(2020, 10))
+pubTs <- ts(data$Mood.TS, frequency = 12, start = c(1952, 10), end = c(2020, 10))
+
+summary(lm(scotusTs ~ pubTs))
+summary(dyn$lm(scotusTs ~ stats::lag(pubTs, -1)))
+
+```
+
+In the long term, public mood is strongly associated with the percentage of liberal Supreme Court outcomes. Specifically, for every 1 unit increase in liberal public mood, Supreme Court liberal outcomes increase by .506.
+
+2. Short Term
+
+```{r}
+
+scotusTs <- ts(data$SCLib.TS, frequency = 12, start = c(2002, 10), end = c(2020, 10))
+pubTs <- ts(data$Mood.TS, frequency = 12, start = c(2002, 10), end = c(2020, 10))
+
+summary(lm(scotusTs ~ pubTs))
+summary(dyn$lm(scotusTs ~ stats::lag(pubTs, -1)))
+
+```
+
+In the short term, this effect is less significant. Specifically, for every one unit increase in liberal public mood, liberal Supreme Court outcomes increase by .478. It makes sense that this effect is less significant, as the United States has become increasingly polarized and the Supreme Court has become the center of political conflict.

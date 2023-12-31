@@ -1,0 +1,127 @@
+---
+title: "504 Hemauer Assignment 2"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+Part 1 
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(MASS)
+library(brant)
+library(knitr)
+
+set.seed(1337)
+
+B1 <- abs(rnorm(1000))
+B2 <- abs(rnorm(1000))
+  
+lambda <- exp(B1 + B2)
+depVari <- rpois(1000, lambda)
+
+poisModel <- glm(depVari ~ B1 + B2, family = "poisson") 
+summary(poisModel)
+
+```
+
+
+```{r}
+
+inflatedModeler <- function(x){
+
+  inflateZero <- rbinom(1000, 1, x)
+
+  zeroVari <- depVari * inflateZero
+
+  zeroModel <- glm(zeroVari ~ B1 + B2, family = "poisson")
+  summary(zeroModel)
+}
+
+inflatedModeler(.04)
+inflatedModeler(.15)
+inflatedModeler(.40)
+inflatedModeler(.80)
+
+```
+
+As zero inflation gets worse, the data becomes less accurate and the standard errors increase. Most distinctly is the intercept. The intercept decreases significantly.
+
+
+```{r}
+
+inflatedModeler <- function(x){
+
+  inflateZero <- rbinom(1000, 1, x)
+
+  zeroVari <- B1 * inflateZero
+
+  zeroModel <- glm(zeroVari ~ B1 + B2, family = "poisson")
+  summary(zeroModel)
+}
+
+suppressWarnings({inflatedModeler(.04)})
+suppressWarnings({inflatedModeler(.15)})
+suppressWarnings({inflatedModeler(.40)})
+suppressWarnings({inflatedModeler(.80)})
+
+```
+
+Standard errors are significantly worse when the Beta is inflated. Likewise, the beta estimates are inaccurate.
+
+Part 2
+
+1.
+
+```{r}
+
+data <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseTwo.csv")
+
+model1 <- polr(data = data, formula = factor(mag010) ~ avmdiala + genyr + regtype + marg + coldwar, Hess = TRUE)
+summary(model1) #Doesn't work when you use all variables
+
+```
+
+2.
+
+```{r}
+
+brant(model1)
+
+```
+
+In this model, the parallel regression assumption holds according to the Brant test. This suggests that the relationship between the independent variables and the dependent variable is the same across all levels of the dependent variable.
+
+3.
+
+```{r}
+
+data$newVar <- data$severity
+
+data$newVar[which(data$newVar < 1000)] <- 0
+data$newVar[which(data$newVar >= 1000 & data$newVar < 8000)] <- 1
+data$newVar[which(data$newVar >= 8000 & data$newVar < 64000)] <- 2
+data$newVar[which(data$newVar >= 64000)] <- 3
+
+model2 <- polr(data = data, formula = factor(newVar) ~ avmdiala + genyr + regtype + marg + coldwar, Hess = TRUE)
+summary(model2)
+
+brant(model2)
+
+```
+
+When re-aggregating values to a smaller ordinal range, the values reported by the model are less accurate and the standard errors remain close to the same. The parallel regression assumption still holds according to the Brant test-- but the probability values change and for the most part, get closer to zero. This suggests that the relationship between the independent variables and the dependent variable is the same across all levels of the dependent variable.
+
+4.
+
+```{r}
+
+model3 <- lm(data = data, formula = mag010 ~ avmdiala + genyr + regtype + marg + coldwar)
+summary(model3)
+
+```
+
+Using OLS, the estimates are significantly different (almost 2x more) and the standard errors are extremely large in comparison to both models run in (1) and (3). As a result, adopting an ordered-response model is very important in finding the most accurate estimates.

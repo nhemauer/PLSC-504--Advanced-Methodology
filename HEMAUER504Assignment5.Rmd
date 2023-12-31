@@ -1,0 +1,572 @@
+---
+title: "PLSC 504 Hemauer Assignment 5"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+Part 1 
+
+1.
+
+```{r}
+
+library(plm)
+library(tidyr)
+
+set.seed(1337)
+
+sim <- function(){
+  
+  n = 10
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(withCoef)
+
+}
+
+data <- replicate(100, sim())
+
+sim <- function(){
+  
+  n = 10
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(randCoef)
+
+}
+
+data2 <- replicate(100, sim())
+
+fullData <- cbind(data, data2)
+
+```
+
+The difference between my fixed effects and my random effects models is minimal. The X coefficient estimates are the same, along with the standard errors.
+
+C.
+
+```{r}
+
+sim <- function(){
+  
+  n = 10
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  test <- phtest(within, random)
+  
+  return(test)
+
+}
+
+test <- replicate(100, sim())
+
+```
+
+The Hausman test reports in every case random effect. Which makes sense given the data generation process.
+
+2.
+
+```{r}
+
+sim <- function(){
+  
+  n = 100
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(withCoef)
+
+}
+
+data <- replicate(100, sim())
+
+sim <- function(){
+  
+  n = 100
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(randCoef)
+
+}
+
+data2 <- replicate(100, sim())
+
+fullData <- cbind(data, data2)
+
+sim <- function(){
+  
+  n = 100
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  test <- phtest(within, random)
+  
+  return(test)
+
+}
+
+test <- replicate(100, sim())
+
+##############################
+
+sim <- function(){
+  
+  n = 10
+  t = 109
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(withCoef)
+
+}
+
+data <- replicate(100, sim())
+
+sim <- function(){
+  
+  n = 10
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(randCoef)
+
+}
+
+data2 <- replicate(100, sim())
+
+fullData <- cbind(data, data2)
+
+sim <- function(){
+  
+  n = 10
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  test <- phtest(within, random)
+  
+  return(test)
+
+}
+
+test <- replicate(100, sim())
+
+######################################
+
+sim <- function(){
+  
+  n = 100
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(withCoef)
+
+}
+
+data <- replicate(100, sim())
+
+sim <- function(){
+  
+  n = 100
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(randCoef)
+
+}
+
+data2 <- replicate(100, sim())
+
+fullData <- cbind(data, data2)
+
+sim <- function(){
+  
+  n = 100
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- rnorm(n*t)
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  test <- phtest(within, random)
+  
+  return(test)
+
+}
+
+test <- replicate(100, sim())
+
+```
+
+When N is increased from 10 to 100, nothing changes from the previous steps. When T is pushed from 10 to 100, and N remains at 10, nothing is changed. When N and T are pushed to 100, the estimates are much closer together and the standard errors are closer to 0, but the Hausman test does not change.
+
+3.
+
+```{r}
+
+library(plm)
+set.seed(1337)
+
+sim <- function(){
+  
+  n = 10
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- (a + rnorm(n*t)) / 2
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(withCoef)
+
+}
+
+data <- replicate(100, sim())
+
+sim <- function(){
+  
+  n = 10
+  t = 10
+  a = rep(rnorm(n), each = t)
+  x <- (a + rnorm(n*t)) / 2
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(randCoef)
+
+}
+
+data2 <- replicate(100, sim())
+
+fullData <- cbind(data, data2)
+
+######################################
+
+sim <- function(){
+  
+  n = 100
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- (a + rnorm(n*t)) / 2
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(withCoef)
+
+}
+
+data <- replicate(100, sim())
+
+sim <- function(){
+  
+  n = 100
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- (a + rnorm(n*t)) / 2
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  return(randCoef)
+
+}
+
+data2 <- replicate(100, sim())
+
+fullData <- cbind(data, data2)
+
+sim <- function(){
+  
+  n = 100
+  t = 100
+  a = rep(rnorm(n), each = t)
+  x <- (a + rnorm(n*t)) / 2
+  u <- rnorm(100)
+  B0 <- 2
+  B1 <- 5
+
+  Y <- B0 + B1 * x + a + u
+
+  ID <- rep(1:n, each = t)
+  pandata <- cbind(Y, x, ID)
+  pandata <- pdata.frame(pandata, index = "ID")
+
+  within <- plm(Y ~ x, data = pandata, model = "within")
+  random <- plm(Y ~ x, data = pandata, model = "random")
+
+  withCoef <- within$coefficients
+  randCoef <- random$coefficients[2]
+  
+  test <- phtest(within, random)
+  
+  return(test)
+
+}
+
+test <- replicate(100, sim())
+
+```
+
+When the Covariance between X and A is not equal to zero, the coefficients between the two models vary widely. Furthermore, the standard error is not all that close to 0, and the Hausman test succeeds (p < .05). When N and T are increased to 100, the estimates still remain far apart, the standard errors are slightly big, and the Hausman test succeeds.
+
+Part 2
+
+1.
+
+```{r}
+
+data <- read.csv("https://raw.githubusercontent.com/PrisonRodeo/PLSC504-2023-git/main/Exercises/PLSC504-2023-ExerciseFive.csv")
+
+pandata <- pdata.frame(data, index = c("Country", "Year"))
+pandata <- drop_na(pandata)
+
+#phtest(within, random)
+within <- plm(TotalTrade ~ UnivEnrollmentPerK + POLITY + GDP + PercentLiterate, data = pandata, model = "within")
+
+summary(within)
+
+```
+
+My model suggests that University Enrollment, Polity, GDP, and Literacy all play an important role in predicting a nation's total trade. For a one unit increase in University Enrollment, total trade decreases by -5660. For a one unit increase in polity, total trade decreases by -3459. For a one unit increase in GDP, total trade increases by 69 dollars. For a one unit increase in percent literate, total trade increases by 2056. 
